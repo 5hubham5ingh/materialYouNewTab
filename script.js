@@ -1459,15 +1459,20 @@ const applyCustomTheme = (color) => {
     document.getElementById('dfChecked').checked = false;
 };
 
+const applyBrowserTheme = async ({ theme }) => applyCustomTheme(theme.colors.frame);
+
+// Watch for theme updates
+navigator.userAgent.includes("Firefox") && browser.theme.onUpdated.addListener(applyBrowserTheme);
+
 // Load theme on page reload// Load theme on page reload
-window.addEventListener('load', function () {
+window.addEventListener('load', async function () {
     // console.log('Page loaded, stored theme:', storedTheme);
     // console.log('Page loaded, stored custom color:', storedCustomColor);
     if (storedTheme) {
         applySelectedTheme(storedTheme);
     } else if (storedCustomColor) {
         applyCustomTheme(storedCustomColor);
-    }
+    } else await applyBrowserTheme({ theme: await browser.theme.getCurrent() });
 });
 
 // Handle radio button changes
