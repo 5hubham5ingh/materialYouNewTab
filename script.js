@@ -1459,10 +1459,92 @@ const applyCustomTheme = (color) => {
     document.getElementById('dfChecked').checked = false;
 };
 
-const applyBrowserTheme = async ({ theme }) => applyCustomTheme(theme.colors.frame);
+const applyBrowserTheme = async ({ theme }) => {
+  const convertToHex = (colorValue) => {
+    
+    colorValue = colorValue.trim();
+
+    // If it's already a 6-character hex code, return it in uppercase
+    if (/^#[0-9A-Fa-f]{6}$/.test(colorValue)) {
+      return colorValue.toUpperCase();
+    }
+
+    // Convert RGB and RGBA
+    if (/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/.test(colorValue)) {
+      const rgbValues = colorValue
+        .replace(/rgba?\(|\)/g, "")
+        .split(",")
+        .map((val) => {
+          const num = parseInt(val.trim(), 10);
+          return num > 255 ? 255 : (num < 0 ? 0 : num);
+        });
+
+      return "#" + rgbValues
+        .map((val) => {
+          const hex = val.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("")
+        .toUpperCase();
+    }
+
+    // Convert HSLA to RGB
+    if (
+      /^hsla?\((\d+),\s*(\d+)%,\s*(\d+)%(?:,\s*[\d.]+)?\)$/.test(colorValue)
+    ) {
+      const [h, s, l] = colorValue
+        .replace(/hsla?\(|\)/g, "")
+        .split(",")
+        .map((val) => parseFloat(val.trim()));
+
+      const hToRgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+
+      const hue = h / 360;
+      const sat = s / 100;
+      const light = l / 100;
+
+      let r, g, b;
+      if (sat === 0) {
+        r = g = b = light;
+      } else {
+        const q = light < 0.5 ? light * (1 + sat) : light + sat - light * sat;
+        const p = 2 * light - q;
+
+        r = hToRgb(p, q, hue + 1 / 3);
+        g = hToRgb(p, q, hue);
+        b = hToRgb(p, q, hue - 1 / 3);
+      }
+
+      return "#" + [r, g, b]
+        .map((val) => {
+          const hex = Math.round(val * 255).toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("")
+        .toUpperCase();
+    }
+    // converiosn failed
+  };
+
+  const newColor = convertToHex(theme.colors.frame);
+  if (!newColor) return;
+  if (newColor.length > 7) {
+    // remove alpha value
+    applyCustomTheme(newColor.slice(0, 7));
+  } else applyCustomTheme(newColor);
+};
+
+const itsFirsfox = navigator.userAgent.includes("Firefox");
 
 // Watch for theme updates
-navigator.userAgent.includes("Firefox") && browser.theme.onUpdated.addListener(applyBrowserTheme);
+if (itsFirsfox) browser.theme.onUpdated.addListener(applyBrowserTheme);
 
 // Load theme on page reload// Load theme on page reload
 window.addEventListener('load', async function () {
@@ -1472,7 +1554,7 @@ window.addEventListener('load', async function () {
         applySelectedTheme(storedTheme);
     } else if (storedCustomColor) {
         applyCustomTheme(storedCustomColor);
-    } else await applyBrowserTheme({ theme: await browser.theme.getCurrent() });
+    } else if (itsFirsfox) await applyBrowserTheme({ theme: await browser.theme.getCurrent() });
 });
 
 // Handle radio button changes
