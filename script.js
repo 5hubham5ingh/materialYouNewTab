@@ -2552,6 +2552,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const adaptiveIconField = document.getElementById("adaptiveIconField");
     const adaptiveIconToggle = document.getElementById("adaptiveIconToggle");
     const aiToolsCheckbox = document.getElementById("aiToolsCheckbox");
+    const firefoxAdaptiveField = document.getElementById("firefoxAdaptiveField");
+    const firefoxAdaptiveToggle = document.getElementById("firefoxAdaptiveToggle");
     const googleAppsCheckbox = document.getElementById("googleAppsCheckbox");
     const todoListCheckbox = document.getElementById("todoListCheckbox");
     const timeformatField = document.getElementById("timeformatField");
@@ -3075,6 +3077,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     initShortCutSwitch(element);
 
+    if (!itsFirsfox) {
+        firefoxAdaptiveField.classList.add("inactive");
+        saveActiveStatus("firefoxAdaptiveField", "inactive");
+    } else {
+        firefoxAdaptiveField.classList.remove("inactive");
+        saveActiveStatus("firefoxAdaptiveField", "active");
+    }
+
     // Add change event listeners for the checkboxes
     shortcutsCheckbox.addEventListener("change", function () {
         saveCheckboxState("shortcutsCheckboxState", shortcutsCheckbox);
@@ -3184,7 +3194,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Apply CSS based on initial state
     document.head.appendChild(iconStyle);
     iconStyle.textContent = adaptiveIconToggle.checked ? ADAPTIVE_ICON_CSS : "";
-
+    
     // Add event listener for checkbox
     adaptiveIconToggle.addEventListener("change", function () {
         saveCheckboxState("adaptiveIconToggle", adaptiveIconToggle);
@@ -3195,6 +3205,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Check if Firefox Theming is enabled or not
+    loadCheckboxState("firefoxAdaptiveToggle", firefoxAdaptiveToggle);
+    
     aiToolsCheckbox.addEventListener("change", function () {
         saveCheckboxState("aiToolsCheckboxState", aiToolsCheckbox);
         if (aiToolsCheckbox.checked) {
@@ -3292,6 +3305,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadCheckboxState("shortcutsCheckboxState", shortcutsCheckbox);
     loadActiveStatus("shortcutEditField", shortcutEditField);
     loadActiveStatus("adaptiveIconField", adaptiveIconField);
+    loadActiveStatus("firefoxAdaptiveField", firefoxAdaptiveField);
     loadCheckboxState("searchsuggestionscheckboxState", searchsuggestionscheckbox);
     loadCheckboxState("useproxyCheckboxState", useproxyCheckbox);
     loadCheckboxState("digitalCheckboxState", digitalCheckbox);
