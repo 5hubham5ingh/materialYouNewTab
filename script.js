@@ -1674,18 +1674,20 @@ const applyBrowserTheme = async ({ theme }) => {
 
 const itsFirsfox = navigator.userAgent.includes("Firefox");
 
-// Watch for theme updates
-if (itsFirsfox) browser.theme.onUpdated.addListener(applyBrowserTheme);
-
 // Load theme on page reload// Load theme on page reload
 window.addEventListener('load', async function () {
     // console.log('Page loaded, stored theme:', storedTheme);
     // console.log('Page loaded, stored custom color:', storedCustomColor);
-    if (storedTheme) {
-        applySelectedTheme(storedTheme);
-    } else if (storedCustomColor) {
-        applyCustomTheme(storedCustomColor);
-    } else if (itsFirsfox) await applyBrowserTheme({ theme: await browser.theme.getCurrent() });
+    if (itsFirsfox&&(localStorage.getItem("firefoxAdaptiveToggleState")=='checked')){
+        browser.theme.onUpdated.addListener(applyBrowserTheme);
+        await applyBrowserTheme({ theme: await browser.theme.getCurrent() })
+    } else {
+        if (storedTheme) {
+            applySelectedTheme(storedTheme);
+        } else if (storedCustomColor) {
+            applyCustomTheme(storedCustomColor);
+        };
+    }
 });
 
 // Handle radio button changes
@@ -1696,6 +1698,8 @@ const handleThemeChange = function () {
         localStorage.setItem(themeStorageKey, colorValue);
         localStorage.removeItem(customThemeStorageKey); // Clear custom theme
         applySelectedTheme(colorValue);
+        firefoxAdaptiveToggle.checked = false;
+        localStorage.setItem("firefoxAdaptiveToggleState", "unchecked");
     }
 };
 
@@ -3206,7 +3210,22 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Check if Firefox Theming is enabled or not
-    loadCheckboxState("firefoxAdaptiveToggle", firefoxAdaptiveToggle);
+    loadCheckboxState("firefoxAdaptiveToggleState", firefoxAdaptiveToggle);
+
+    firefoxAdaptiveToggle.addEventListener("change", async function () {
+        saveCheckboxState("firefoxAdaptiveToggleState", firefoxAdaptiveToggle);
+        if (firefoxAdaptiveToggle.checked) {
+            await applyBrowserTheme({ theme: await browser.theme.getCurrent() });
+            browser.theme.onUpdated.addListener(applyBrowserTheme);
+        } else {
+            if (storedTheme) {
+                applySelectedTheme(storedTheme);
+            } else if (storedCustomColor) {
+                applyCustomTheme(storedCustomColor);
+            };
+            browser.theme.onUpdated.removeListener(applyBrowserTheme);
+        }
+    });
     
     aiToolsCheckbox.addEventListener("change", function () {
         saveCheckboxState("aiToolsCheckboxState", aiToolsCheckbox);
@@ -3315,6 +3334,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadActiveStatus("greetingField", greetingField);
     loadActiveStatus("proxybypassField", proxybypassField);
     loadCheckboxState("aiToolsCheckboxState", aiToolsCheckbox);
+    loadCheckboxState("firefoxAdaptiveToggleState", firefoxAdaptiveToggle);
     loadCheckboxState("googleAppsCheckboxState", googleAppsCheckbox);
     loadCheckboxState("todoListCheckboxState", todoListCheckbox);
     loadDisplayStatus("shortcutsDisplayStatus", shortcuts);
